@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const start = new Date();
 const size = 9;
 const blockSize = 3;
@@ -24,10 +25,15 @@ const hints = new Set([[0, 4, 1], [0, 5, 4], [0, 7, 8], [1, 0, 7], [1, 2, 8], [2
 */
 
 try {
-	solve(hints);
+	let seen = new Set();
+	solve(hints, seen);
 }
 catch (e) {
-	console.log('Solved.');
+	if (e === 'solved')
+		console.log('Solved.');
+	else {
+		console.error(e);
+	}
 }
 
 console.log('Time:', new Date() - start);
@@ -35,16 +41,24 @@ console.log('Time:', new Date() - start);
 
 // functions
 
-function solve (filledValues) {
+function solve (filledValues, seen) {
+
+	const situationHash = hashSituation(filledValues);
+	if (seen.has(situationHash)) {
+		return;
+	}
+
+	seen.add(situationHash);
 
 	let sudoku = initializeSudoku(filledValues);
 
-	// if (new Date().getTime() % 100 === 0)
-	printSudoku(sudoku, [...filledValues][filledValues.size - 1]);
-	console.log('Filled:', filledValues.size);
-
-	if (filledValues.size === 81) {
-		throw 'solved';
+	if (new Date().getTime() % 100 === 0 || filledValues.size === 81) {
+		printSudoku(sudoku, [...filledValues][filledValues.size - 1]);
+		console.log('Filled:', filledValues.size, 'Seen:', seen.size);
+		console.log('Situation:', situationHash);
+		if (filledValues.size === 81) {
+			throw 'solved';
+		}
 	}
 
 	sudoku.cells.filter(cell => !cell.value).sort((a, b) => a.possibleValues.size - b.possibleValues.size).forEach(cell => {
@@ -55,12 +69,18 @@ function solve (filledValues) {
 			newFilledValues.add([cell.row, cell.column, value]);
 
 			try {
-				solve(newFilledValues);
+				solve(newFilledValues, seen);
 			}
 
 			catch (e) {
 				if (e === 'solved') {
 					throw e;
+				}
+				else if (e === 'no possible value') {
+
+				}
+				else {
+					console.error(e);
 				}
 			}
 		});
@@ -166,5 +186,11 @@ function printSudoku(sudoku, testing) {
 		});
 		process.stdout.write("\n" + '-'.repeat(4 * size + 1) + "\n");
 	});
+}
+
+function hashSituation(filledValues) {
+	const situationString = [...filledValues].map(value => value.join('')).sort((a, b) => a > b ? 1 : -1).join();
+	const situationHash = crypto.createHash('md5').update(situationString).digest("hex");
+	return situationHash;
 }
 
