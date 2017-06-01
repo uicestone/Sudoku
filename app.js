@@ -3,7 +3,40 @@ const start = new Date();
 const size = 9;
 const blockSize = 3;
 const values = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-const hints = new Set([[0, 4, 1], [0, 5, 4], [0, 7, 8], [1, 0, 7], [1, 2, 8], [2, 5, 8], [3, 0, 5], [3, 2, 2], [4, 3, 6], [5, 6, 1], [5, 8, 8], [6, 6, 9], [7, 1, 6], [8, 3, 9], [8, 4, 3]]);
+const stdin = process.openStdin();
+
+let hints = [];
+let lines = 0;
+
+stdin.addListener("data", function(d) {
+	lines ++;
+	d.toString().trim().split(/\s+/).forEach((digit, index) => {
+		digit = Number(digit);
+		if (digit === 0) {
+			return;
+		}
+		hints.push([lines - 1, index, digit]);
+	});
+
+	if(lines === 9) {
+
+		hints = new Set(hints);
+
+		try {
+			let seen = new Set();
+			solve(hints, seen);
+		}
+		catch (e) {
+			if (e === 'solved')
+				console.log('Solved.');
+			else {
+				console.error(e);
+			}
+		}
+
+		console.log('Time:', new Date() - start);
+	}
+});
 
 /* Cell:
 {
@@ -23,21 +56,6 @@ const hints = new Set([[0, 4, 1], [0, 5, 4], [0, 7, 8], [1, 0, 7], [1, 2, 8], [2
 	blocks: [[Cell]]
 }
 */
-
-try {
-	let seen = new Set();
-	solve(hints, seen);
-}
-catch (e) {
-	if (e === 'solved')
-		console.log('Solved.');
-	else {
-		console.error(e);
-	}
-}
-
-console.log('Time:', new Date() - start);
-
 
 // functions
 
